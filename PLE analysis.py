@@ -252,11 +252,11 @@ for i in np.arange(1, NumberOfraws, 1):
         Max0 = Max1
 
 #NormalizedPL = data1 / Max0
-NormalizedPL1 = data1 / FindASite_S22(500, 1120, data1)
-NormalizedPL2 = data22 / FindASite_S22(500, 1120, data22)
+NormalizedPL1 = data1 / FindASite_S22(round_up(502), round_up(1122), data1)
+NormalizedPL2 = data22 / FindASite_S22(round_up(502), round_up(1122), data22)
 
-NormalizedPL_S1 = dataS1 / FindASite(500, 1120, dataS1)
-NormalizedPL_S2 = dataS22 / FindASite(500, 1120, dataS22)
+NormalizedPL_S1 = dataS1 / FindASite(round_up(502), round_up(1122), dataS1)
+NormalizedPL_S2 = dataS22 / FindASite(round_up(502), round_up(1122), dataS22)
 
 #save PL spectra:
 # E = save_spectra(650, data1, data22)    #NormalizedPL1, NormalizedPL2)
@@ -283,10 +283,13 @@ EmPL = np.arange(850,1355,5)
 
 s22_s33 = True
 
+# Transition energies calculated by the empirical model:
 Chirality = ['(6,5)', '(7,5)', '(7,6)', '(9,4)', '(8,4)', '(10,2)', '(8,6)', '(8,3)', '(9,5)',
              '(10,3)', '(11,1)', '(8,7)', '(6,4)']  #'(5,4)'     # '(6,4)',
 S11 = [976, 1024, 1120, 1101, 1111, 1053, 1173, 952, 1241, 1249, 1265, 1265, 873]   # 835       # 873,
 S22 = [566, 645, 648, 722, 589, 737, 718, 665, 672, 632, 610, 728, 578]     # 483      # 578,
+
+empirical_energies = np.concatenate((Chirality, S11, S22), axis=0).reshape(3,len(S11))
 
 # Input Cary60 absorbance files:
 Result = "C:/Users/Eric Hu/TEAS data plot/TEASanalysis/21-02-12 SteadyState Absorbance/file1.txt"
@@ -386,16 +389,21 @@ ax.set_aspect(2)
 #ax.set_title('PLE Contour, Ex(500-800)/Em(850-1350)', color='r', fontproperties=myFont)
 
 # plot the Eii energies of SWCNTs in a solution state
-S33_S11_chirality = ['(7,6)', '(8,6)']
-S33_S11_ex_unfilled = [372.1, 371.6]   # 337.4, 347,
-S33_S11_em_unfilled = [1125.9, 1184.4]   # 1026.3, 994.4,
-S22_S11_ex_unfilled = [647.7, 585.7, 721.6, 645.5, 570.3, 671.8, 733.9, 716.3]
-S22_S11_em_unfilled = [1126.2, 1121.3, 1120.8, 1028, 989.9, 955, 1042.1, 1180.7]
+#S33_S11_chirality = ['(7,6)', '(8,6)']
+#S33_S11_ex_unfilled = [372.1, 371.6]   # 337.4, 347,
+#S33_S11_em_unfilled = [1125.9, 1184.4]   # 1026.3, 994.4,
+#S22_S11_ex_unfilled = [647.7, 585.7, 721.6, 645.5, 570.3, 671.8, 733.9, 716.3]
+#S22_S11_em_unfilled = [1126.2, 1121.3, 1120.8, 1028, 989.9, 955, 1042.1, 1180.7]
 
-for i in range(len(Chirality)):
-    ax.text(S11[i]-10, S22[i]-17, '{}'.format(str(Chirality[i])), fontsize=12, color='w', fontproperties=myFont2)
+for i in range(empirical_energies.shape[1]):
+    ax.text(int(empirical_energies[1,i])-10, int(empirical_energies[2,i])-17, '{}'.format(empirical_energies[0,i]), fontsize=12, color='w', fontproperties=myFont2)
 
-    ax.text(S11[i], S22[i], '.', fontsize=30, color='white')
+    ax.text(int(empirical_energies[1,i]), int(empirical_energies[2,i]), '.', fontsize=30, color='white')
+
+#for i in range(len(Chirality)):
+#    ax.text(S11[i]-10, S22[i]-17, '{}'.format(str(Chirality[i])), fontsize=12, color='w', fontproperties=myFont2)
+
+#    ax.text(S11[i], S22[i], '.', fontsize=30, color='white')
    # except Chirality[i]=='(10,2)'
 
 
@@ -455,18 +463,21 @@ plt.yticks(fontproperties=myFont2)
 
 ax.set_aspect(2)
 
-# We can still add a colorbar for the image, too.
-# CBI = fig.colorbar(im, orientation='vertical', shrink=0.8)
-
 # compare the exp energies with the model considering many-body effect (nmEnergyCalc.py):
 
 #for m in range(12, 23, 1):  #[14, 16, 19, 22, 24]:
  #   a = mp(familyvalue=m)
 
-for i in range(len(Chirality)):
-    ax.text(S11[i]-10, S22[i]-17, '{}'.format(str(Chirality[i])), fontsize=12, color='w', fontproperties=myFont2)
+for i in range(empirical_energies.shape[1]):
+    ax.text(int(empirical_energies[1,i])-10, int(empirical_energies[2,i])-17, '{}'.format(empirical_energies[0,i]), fontsize=12, color='w', fontproperties=myFont2)
 
-    ax.text(S11[i], S22[i], '.', fontsize=30, color='white')
+    ax.text(int(empirical_energies[1,i]), int(empirical_energies[2,i]), '.', fontsize=30, color='white')
+
+
+#for i in range(len(Chirality)):
+#    ax.text(S11[i]-10, S22[i]-17, '{}'.format(str(Chirality[i])), fontsize=12, color='w', fontproperties=myFont2)
+
+#    ax.text(S11[i], S22[i], '.', fontsize=30, color='white')
 
 #for i in range(len(Chirality)):
     #plt.annotate('{}'.format(Chirality[i]), (S11[i], S22[i]), color='white',
@@ -479,10 +490,10 @@ for i in range(len(Chirality)):
 #ax.set_title('PLE Contour, Ex(500-800)/Em(850-1350)', color='r')
 
 # plot the Eii energies of SWCNTs in a solution state
-S33_S11_ex_HgTefilled = [369.7, 337.6, 371.8, 374.2]    # 346.5,
-S33_S11_em_HgTefilled = [1127, 1037.3, 1053.5, 1203]    # 986.3,
-S22_S11_ex_HgTefilled = [649, 590, 731.2, 646.5, 569.4, 671.1, 736.2, 727.3]
-S22_S11_em_HgTefilled = [1131, 1123, 1124.6, 1036.4, 989.9, 959.6, 1063.6, 1202.3]
+#S33_S11_ex_HgTefilled = [369.7, 337.6, 371.8, 374.2]    # 346.5,
+#S33_S11_em_HgTefilled = [1127, 1037.3, 1053.5, 1203]    # 986.3,
+#S22_S11_ex_HgTefilled = [649, 590, 731.2, 646.5, 569.4, 671.1, 736.2, 727.3]
+#S22_S11_em_HgTefilled = [1131, 1123, 1124.6, 1036.4, 989.9, 959.6, 1063.6, 1202.3]
 
 
 ##for k, energy in enumerate(S33_S11_ex_HgTefilled):
@@ -537,9 +548,9 @@ plt.xticks(fontproperties=myFont4)
 plt.yticks(fontproperties=myFont4)
 plt.rcParams["axes.linewidth"]  = 2.0
 
-for i in range(len(Chirality)):
+for i in range(empirical_energies.shape[1]):
     #ax.text(S11[i]-0, S22[i]+20, '{}'.format(Chirality[i]), fontsize=0.5, color='black', fontproperties=myFont2)
-    ax.text(S11[i], S22[i], '.', fontsize=30, color='black')
+    ax.text(int(empirical_energies[1,i]), int(empirical_energies[2,i]), '.', fontsize=30, color='black')
 
 
 #ax.set_title('', color='b')     #Level in Log scale, Ex(500-800)/Em(850-1350)
@@ -588,9 +599,9 @@ plt.yticks(fontproperties=myFont4)
 plt.rcParams["axes.linewidth"]  = 2.0
 
 
-for i in range(len(Chirality)):
+for i in range(empirical_energies.shape[1]):
     #ax.text(S11[i]-0, S22[i]+20, '{}'.format(Chirality[i]), fontsize=0.5, color='black', fontproperties=myFont2)
-    ax.text(S11[i], S22[i], '.', fontsize=30, color='black')
+    ax.text(int(empirical_energies[1,i]), int(empirical_energies[2,i]), '.', fontsize=30, color='black')
 
 plt.xlabel('Emission (nm)', fontproperties=myFont3)
 plt.ylabel('Excitation (nm)', fontproperties=myFont3)
