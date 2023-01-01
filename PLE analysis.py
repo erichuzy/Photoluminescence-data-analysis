@@ -8,6 +8,8 @@ from matplotlib.colors import LogNorm
 import pylab
 import math
 
+from scipy.signal import find_peaks
+
 from scipy.optimize import curve_fit
 
 from matplotlib.colors import LinearSegmentedColormap
@@ -84,54 +86,106 @@ def SubBandEnergies(Excitation=565, Emission=970):
 
     return Em_eV, Ex_eV
 
-def PlotPLE(Emission, data, Color, unfilled=True):
-    f = np.zeros((len(ExPLE_s22), 2))
+def PlotPLE(Emission, data, Color, Ex_peak_estimate, unfilled=True):
+    #f = np.zeros((len(ExPLE_s22), 2))
     EmPosition = (Emission - Em1) / EmStep
+    estimate_position = (Ex_peak_estimate - Ex11) / ExStep
+
     Integration = data[:,int(EmPosition-1):int(EmPosition+1)].sum(axis=1)
+    Integration /= max(Integration)
+    Integration_diff = np.diff(Integration, n=1)
+
     #Integration = data[:, :].sum(axis=1)
     #Integration = data[int(EmPosition-1):int(EmPosition+1),:].sum(axis=0)
-    PLEprofile = Integration[22:41]      # [0:61] for 500-800      # [0:91] for 330-800    # Integration[0:90] (for 350-800)
-    NormalizedPLE = PLEprofile / max(PLEprofile)
+    #PLEprofile = Integration[22:41]      # [0:61] for 500-800      # [0:91] for 330-800    # Integration[0:90] (for 350-800)
+    #NormalizedPLE = PLEprofile / max(PLEprofile)
     #f[:,0] = Emission
     #f[:,1] = NormalizedPLE
 
-    #a,b,c = polyval(ExPLE, NormalizedPLE, 2)
-    #NormalizedPLE_pred = polyval([a,b,c], ExPLE)
+    peak_count = 0
+    peak_idx = []
+
+    for id_x in np.arange(10, len(Integration_diff)-10, 1):
+        if np.sign(Integration_diff[id_x]) - np.sign(Integration_diff[id_x+1]) == 2:
+            peak_idx.append(id_x)
+            peak_count += 1
+        elif Integration_diff[id_x] == 0:
+            peak_idx.append(id_x)
+            peak_count += 1
+
+    peak_idx_required, n = min((n, peak_idx_required) for peak_idx_required, n in enumerate(np.abs(np.array(peak_idx) - estimate_position)))
+    peak_wavelength = ExPLE_s22[peak_idx[n]]
+
+    #print(peak_idx)
+    print('estimated no. of peaks:', peak_count)
+    #print(peak_idx_required)
+    print('Ex wavelength of the acquired peak:', peak_wavelength, 'nm')
+
+
 
     if unfilled:
-        ax2.plot(ExPLE_s22[22:41], NormalizedPLE, '-', color=Color, linewidth=2.5,
+        ax2.plot(ExPLE_s22, Integration/Integration[peak_idx[n]+1], '-', color=Color, linewidth=2.5,
                  label='unfilled {0}-{1} nm'.format(str(Emission - 5), str(Emission + 5)))      # NormalizedPLE * ScaleFactor + Offset
+        #ax2.scatter(ExPLE_s22[int(peak)], NormalizedPLE[int(peak)])
 
     else:
-        ax2.plot(ExPLE_s22[22:41], NormalizedPLE, '-', color=Color, linewidth=2.5,
+        ax2.plot(ExPLE_s22, Integration/Integration[peak_idx[n]+1], '-', color=Color, linewidth=2.5,
                  label='HgTe-filled {0}-{1} nm'.format(str(Emission - 5), str(Emission + 5)))       # NormalizedPLE * ScaleFactor * 0.7 + Offset
 
 
 
-    #return f[:,1]
+    plt.xlim(peak_wavelength-30, peak_wavelength+30)
+    plt.ylim(0.2, 1.2)
 
-def PlotPL(Excitation, data, color, unfilled=True):
+def PlotPL(Excitation, data, color, Em_peak_estimate, unfilled=True):
     #f = np.zeros((len(Em), 2))
     ExPosition = (Excitation - 500) / ExStep
+    estimate_position = (Em_peak_estimate - Em1) / EmStep
+
     Integration = data[int(ExPosition-1):int(ExPosition+1),:].sum(axis=0)
+    Integration /= max(Integration)
+    Integration_diff = np.diff(Integration, n=1)
+
     #Integration = data[:, :].sum(axis=1)
     #Integration = data[int(EmPosition-1):int(EmPosition+1),:].sum(axis=0)
-    PLspectrum = Integration[20:60]    # Integration[0:90] (for 350-800), Integration[0:101] (for 330-800)
-    NormalizedPL = PLspectrum / max(PLspectrum)
+    #PLspectrum = Integration[20:60]    # Integration[0:90] (for 350-800), Integration[0:101] (for 330-800)
+    #NormalizedPL = PLspectrum / max(PLspectrum)
     #f[:,0] = Emission
     #f[:,1] = NormalizedPL
 
+    peak_count = 0
+    peak_idx = []
+
+    for id_x in np.arange(10, len(Integration_diff) - 10, 1):
+        if np.sign(Integration_diff[id_x]) - np.sign(Integration_diff[id_x + 1]) == 2:
+            peak_idx.append(id_x)
+            peak_count += 1
+        elif Integration_diff[id_x] == 0:
+            peak_idx.append(id_x)
+            peak_count += 1
+
+    peak_idx_required, n = min(
+        (n, peak_idx_required) for peak_idx_required, n in enumerate(np.abs(np.array(peak_idx) - estimate_position)))
+    peak_wavelength = EmPL[peak_idx[n]]
+
+    # print(peak_idx)
+    print('estimated no. of peaks:', peak_count)
+    # print(peak_idx_required)
+    print('Em wavelength of the acquired peak:', peak_wavelength, 'nm')
+
     if unfilled:
-        ax2.plot(EmPL[20:60], NormalizedPL, '--', color=color, linewidth=2.5,
+        ax2.plot(EmPL, Integration/Integration[peak_idx[n]+1], '--', color=color, linewidth=2.5,
                  label='unfilled {0}-{1} nm'.format(str(Excitation - 5), str(Excitation + 5)))      # NormalizedPL * ScaleFactor + Offset + 0.14
 
     else:
-        ax2.plot(EmPL[20:60], NormalizedPL, '--', color=color, linewidth=2.5,
+        ax2.plot(EmPL, Integration/Integration[peak_idx[n]+1], '--', color=color, linewidth=2.5,
                  label='HgTe-filled {0}-{1} nm'.format(str(Excitation - 5), str(Excitation + 5)))       # NormalizedPL * ScaleFactor + Offset + 0.14
 
 
 
-    return NormalizedPL
+    #return NormalizedPL
+    plt.xlim(peak_wavelength - 30, peak_wavelength + 30)
+    plt.ylim(0.2, 1.2)
 
 # Input Lambda1050 Absorbance data:
 def PlotAbs(AbsFile):
@@ -365,8 +419,8 @@ ax.xaxis.set_minor_locator(plt.MultipleLocator(50))
 ax.yaxis.set_minor_locator(plt.MultipleLocator(25))
 #ax.yaxis.set_minor_formatter(ScalarFormatter("%.3f"))
 
-plt.xticks(fontproperties=myFont)
-plt.yticks(fontproperties=myFont)   #Ex_positions, Ex_labels)
+#plt.xticks(fontproperties=myFont)
+#plt.yticks(fontproperties=myFont)   #Ex_positions, Ex_labels)
 #plt.rcParams["axes.linewidth"]  = 2.0
 
 ax.set_aspect(2)
@@ -458,8 +512,8 @@ ax.yaxis.set_major_locator(plt.MultipleLocator(50))
 ax.xaxis.set_minor_locator(plt.MultipleLocator(50))
 ax.yaxis.set_minor_locator(plt.MultipleLocator(25))
 #ax.yaxis.set_minor_formatter(ScalarFormatter("%.3f"))
-plt.xticks(fontproperties=myFont2)
-plt.yticks(fontproperties=myFont2)
+#plt.xticks(fontproperties=myFont2)
+#plt.yticks(fontproperties=myFont2)
 
 ax.set_aspect(2)
 
@@ -611,10 +665,10 @@ plt.ylabel('Excitation (nm)', fontproperties=myFont3)
 fig,ax2 = plt.subplots(figsize=(8,7))
 
 
-f1 = PlotPLE(round_up(1024), data1, 'black', unfilled=True)
-#f1_em = PlotPL(round_up(648), data1, 'black', unfilled=True)
-f2 = PlotPLE(round_up(1024), data22, 'red', unfilled=False)
-#f2_em = PlotPL(round_up(648), data22, 'red', unfilled=False)
+#f1 = PlotPLE(round_up(1023), data1, 'black', Ex_peak_estimate=round_up(646), unfilled=True)
+f1_em = PlotPL(round_up(648), data1, 'black', Em_peak_estimate=round_up(1025), unfilled=True)
+#f2 = PlotPLE(round_up(1023), data22, 'red', Ex_peak_estimate=round_up(648), unfilled=False)
+f2_em = PlotPL(round_up(648), data22, 'red', Em_peak_estimate=round_up(1027), unfilled=False)
 ##f3 = PlotPLE(1195, data1, 'purple', unfilled=False)
 ###ax2.plot(wavelength, Abs, '-', color='gray', linewidth=2,  label='Absorbance')
 ##np.savetxt('PLE unfilled.txt', f1, delimiter='   ')
@@ -637,16 +691,12 @@ ax2.yaxis.set_major_locator(plt.MultipleLocator(30))
 ax2.xaxis.set_minor_locator(plt.MultipleLocator(15))
 ax2.yaxis.set_minor_locator(plt.MultipleLocator(15))
 
-plt.xticks(fontproperties=myFont)
-plt.yticks(fontproperties=myFont)
+#plt.xticks(fontproperties=myFont)
+#plt.yticks(fontproperties=myFont)
 #plt.rcParams["axes.linewidth"]  = 2.0
 
-#ax.set_aspect(2)
-ax2.set_aspect(40)
+ax2.set_aspect(50)
 
-#xlim(960,1100)
-xlim(610,700)
-ylim(0.05,1.2)
 
 savefig(spectrafile, dpi=150)
 
