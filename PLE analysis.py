@@ -269,7 +269,7 @@ Ex1 = 330       #330
 Ex11 = 500      # 350      # where no graph combination
 Ex2 = 800
 
-Ex_start = 500
+Ex_start = 330
 Ex_stop = 750
 Em_start = 850
 Em_stop = 1350
@@ -290,12 +290,12 @@ EM, EX = np.meshgrid(Em, Ex, sparse=True)
 
 # Input S22_S11 PLE contour files:
 location = 'C:/Users/Eric Hu/TEAS data plot/TEASanalysis/'
-file1 = location + 'CHASM C3 PLE contour' + '.csv'      # Unfilled CoMo76 semi PLE contour / unfilled semi gelatin 350 to 800
+file1 = location + 'Unfilled CoMo76 semi PLE contour' + '.csv'      # Unfilled CoMo76 semi PLE contour / unfilled semi gelatin 350 to 800
                                        # /unfilled raw CHASM PLE contour
 data = loadtxt(file1, delimiter=',')
 data1 = np.transpose(data)
 
-file2 = location + 'HgTe CHASM sorted C3 PLE contour' + '.csv'      # HgTe-filled CoMo76 semi PLE contour / HgTefilled semi gelatin 350 to 800
+file2 = location + 'HgTe-filled CoMo76 semi PLE contour' + '.csv'      # HgTe-filled CoMo76 semi PLE contour / HgTefilled semi gelatin 350 to 800
                                     # /HgTe CHASM 0.5wtSC PLE contour
 data2 = loadtxt(file2, delimiter=',')
 data22 = np.transpose(data2)
@@ -320,7 +320,7 @@ ExPLE_s22 = np.arange(500, 805, 5)
 ExPLE_s33 = np.arange(330, 505, 5)
 EmPL = np.arange(850,1355,5)
 
-s22_s33 = False
+s22_s33 = True
 correct_exvariation = True
 
 Max0 = max(data[0,:])
