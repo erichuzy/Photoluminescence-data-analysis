@@ -208,7 +208,7 @@ def PlotAbs(AbsFile):
 
     return Abs
 
-def filter_negative_signal(d):
+def filter_negative_signal(d, correct_exvariation=True):
 
     range_of_raw = len(d[:,0])
     range_of_column = len(d[0,:])
@@ -216,13 +216,29 @@ def filter_negative_signal(d):
     for i in range(range_of_raw):
         for j in range(range_of_column):
 
+            if correct_exvariation:
+                d[i,j] -= d[i,0] - (d[i,0]-d[i,-1]) * j / range_of_column   # assuming tht background signal varies linearly with Emission wavelength
+
             if d[i,j] < 0.1:    # 0.35:
                 d[i,j] = 0.1    # 0.35
 
             #elif d[i,j] > 10.0:
              #   d[i,j] = 10.0
 
+    #fig, ax3 = plt.subplots(figsize=(8, 7))
+    #bg_start = d[:,0]
+    #bg_end = d[:,-1]
+    #ax3.plot(ExPLE_s22, bg_start, ExPLE_s22, bg_end)
+
     return d
+
+def bg_profile(d):
+
+    ax3 = fig2.add_subplot(211)
+    bg_start = d[:, 0]
+    bg_end = d[:, -1]
+    ax3.plot(ExPLE_s22, bg_start, label='bg @ 850 nm')
+    ax3.plot(ExPLE_s22, bg_end, label='bg @ 1350 nm')
 
 def save_spectra(Excitation, data1, data2):
 
@@ -253,7 +269,7 @@ Ex1 = 330       #330
 Ex11 = 500      # 350      # where no graph combination
 Ex2 = 800
 
-Ex_start = 330
+Ex_start = 500
 Ex_stop = 750
 Em_start = 850
 Em_stop = 1350
@@ -274,12 +290,12 @@ EM, EX = np.meshgrid(Em, Ex, sparse=True)
 
 # Input S22_S11 PLE contour files:
 location = 'C:/Users/Eric Hu/TEAS data plot/TEASanalysis/'
-file1 = location + 'Unfilled CoMo76 semi PLE contour' + '.csv'      # Unfilled CoMo76 semi PLE contour / unfilled semi gelatin 350 to 800
+file1 = location + 'CHASM C3 PLE contour' + '.csv'      # Unfilled CoMo76 semi PLE contour / unfilled semi gelatin 350 to 800
                                        # /unfilled raw CHASM PLE contour
 data = loadtxt(file1, delimiter=',')
 data1 = np.transpose(data)
 
-file2 = location + 'HgTe-filled CoMo76 semi PLE contour' + '.csv'      # HgTe-filled CoMo76 semi PLE contour / HgTefilled semi gelatin 350 to 800
+file2 = location + 'HgTe CHASM sorted C3 PLE contour' + '.csv'      # HgTe-filled CoMo76 semi PLE contour / HgTefilled semi gelatin 350 to 800
                                     # /HgTe CHASM 0.5wtSC PLE contour
 data2 = loadtxt(file2, delimiter=',')
 data22 = np.transpose(data2)
@@ -298,6 +314,14 @@ dataS22 = np.transpose(dataS2)
 NumberOfraws = len(data1[:,1])
 NumberOfColumns = len(data1[1,:])
 #print(NumberOfraws, NumberOfColumns)
+
+ExPLE = np.arange(350, 805, 5)
+ExPLE_s22 = np.arange(500, 805, 5)
+ExPLE_s33 = np.arange(330, 505, 5)
+EmPL = np.arange(850,1355,5)
+
+s22_s33 = False
+correct_exvariation = True
 
 Max0 = max(data[0,:])
 for i in np.arange(1, NumberOfraws, 1):
@@ -321,8 +345,8 @@ NormalizedPL_S2 = dataS22 / FindASite(round_up(502), round_up(1122), dataS22)
 #Map = np.zero(rows, columns)
 NormalizedPLCombined1_raw = np.concatenate((NormalizedPL_S1, NormalizedPL1), axis=0)
 NormalizedPLCombined2_raw = np.concatenate((NormalizedPL_S2, NormalizedPL2), axis=0)
-NormalizedPLCombined1 = filter_negative_signal(NormalizedPLCombined1_raw)
-NormalizedPLCombined2 = filter_negative_signal(NormalizedPLCombined2_raw)
+NormalizedPLCombined1 = filter_negative_signal(NormalizedPLCombined1_raw, correct_exvariation)
+NormalizedPLCombined2 = filter_negative_signal(NormalizedPLCombined2_raw, correct_exvariation)
 
 
 EmEnergy1_eV = 1240.0 / Em1
@@ -330,12 +354,6 @@ EmEnergy2_eV = 1240.0 / Em2
 ExEnergy1_eV = 1240.0 / Ex1
 ExEnergy2_eV = 1240.0 / Ex2
 
-ExPLE = np.arange(350, 805, 5)
-ExPLE_s22 = np.arange(500, 805, 5)
-ExPLE_s33 = np.arange(330, 505, 5)
-EmPL = np.arange(850,1355,5)
-
-s22_s33 = True
 
 # Transition energies calculated by the empirical model:
 Chirality = ['(6,5)', '(7,5)', '(7,6)', '(9,4)', '(8,4)', '(10,2)', '(8,6)', '(8,3)', '(9,5)',
@@ -394,7 +412,7 @@ if s22_s33:
     CS = ax.contour(NormalizedPLCombined1, levels, origin='lower', cmap='flag',
                     linewidths=0.02, extent=(Em1, Em2, Ex1, Ex2))
 else:
-    im = ax.imshow(filter_negative_signal(NormalizedPL1), interpolation='bilinear', origin='lower',
+    im = ax.imshow(filter_negative_signal(NormalizedPL1, correct_exvariation), interpolation='bilinear', origin='lower',
                    cmap=cmap, extent=(Em1, Em2, Ex11, Ex2))
     CS = ax.contour(NormalizedPL1, levels, origin='lower', cmap='flag',
                     linewidths=0.02, extent=(Em1, Em2, Ex11, Ex2))
@@ -495,7 +513,7 @@ if s22_s33:
     CS = ax.contour(NormalizedPLCombined2, levels, origin='lower', cmap='flag',
                     linewidths=0.02, extent=(Em1, Em2, Ex11, Ex2))
 else:
-    im = ax.imshow(filter_negative_signal(NormalizedPL2), interpolation='bilinear', origin='lower',
+    im = ax.imshow(filter_negative_signal(NormalizedPL2, correct_exvariation), interpolation='bilinear', origin='lower',
                    cmap=cmap, extent=(Em1, Em2, Ex11, Ex2))
     CS = ax.contour(NormalizedPL2, levels, origin='lower', cmap='flag',
                     linewidths=0.02, extent=(Em1, Em2, Ex11, Ex2))
@@ -574,7 +592,7 @@ if s22_s33:
     CS = ax.contour(NormalizedPLCombined1, levels, origin='lower', cmap='flag',
                     linewidths=0.2, extent=(Em1, Em2, Ex1, Ex2))
 else:
-    im = ax.imshow(filter_negative_signal(NormalizedPL1), interpolation='bicubic', origin='lower',
+    im = ax.imshow(filter_negative_signal(NormalizedPL1, correct_exvariation), interpolation='bicubic', origin='lower',
                    cmap=cm.rainbow, norm = LogNorm(), extent=(Em1, Em2, Ex11, Ex2))
     CS = ax.contour(NormalizedPL1, levels, origin='lower', cmap='flag',
                     linewidths=0.2, extent=(Em1, Em2, Ex11, Ex2))
@@ -623,7 +641,7 @@ if s22_s33:
     CS = ax.contour(NormalizedPLCombined2, levels, origin='lower', cmap='flag',
                     linewidths=0.2, extent=(Em1, Em2, Ex1, Ex2))
 else:
-    im = ax.imshow(filter_negative_signal(NormalizedPL2), interpolation='bilinear', origin='lower',
+    im = ax.imshow(filter_negative_signal(NormalizedPL2, correct_exvariation), interpolation='bilinear', origin='lower',
                    cmap=cm.rainbow, norm = LogNorm(), extent=(Em1, Em2, Ex11, Ex2))
     CS = ax.contour(NormalizedPL2, levels, origin='lower', cmap='flag',
                     linewidths=0.2, extent=(Em1, Em2, Ex11, Ex2))
@@ -662,13 +680,15 @@ plt.ylabel('Excitation (nm)', fontproperties=myFont3)
 
 # Plot PLE profile
 #fig.subplot_adjust()
-fig,ax2 = plt.subplots(figsize=(8,7))
+fig2 = plt.figure()
+#fig,ax2 = plt.subplots(figsize=(8,7))
+ax2 = fig2.add_subplot(111)
 
 
-#f1 = PlotPLE(round_up(1023), data1, 'black', Ex_peak_estimate=round_up(646), unfilled=True)
-f1_em = PlotPL(round_up(648), data1, 'black', Em_peak_estimate=round_up(1025), unfilled=True)
-#f2 = PlotPLE(round_up(1023), data22, 'red', Ex_peak_estimate=round_up(648), unfilled=False)
-f2_em = PlotPL(round_up(648), data22, 'red', Em_peak_estimate=round_up(1027), unfilled=False)
+#f1 = PlotPLE(round_up(1023), filter_negative_signal(NormalizedPL1, correct_exvariation), 'black', Ex_peak_estimate=round_up(646), unfilled=True)
+f1_em = PlotPL(round_up(648), filter_negative_signal(NormalizedPL1, correct_exvariation), 'black', Em_peak_estimate=round_up(1123), unfilled=True)
+#f2 = PlotPLE(round_up(1023), filter_negative_signal(NormalizedPL2, correct_exvariation), 'red', Ex_peak_estimate=round_up(648), unfilled=False)
+f2_em = PlotPL(round_up(648), filter_negative_signal(NormalizedPL2, correct_exvariation), 'red', Em_peak_estimate=round_up(1123), unfilled=False)
 ##f3 = PlotPLE(1195, data1, 'purple', unfilled=False)
 ###ax2.plot(wavelength, Abs, '-', color='gray', linewidth=2,  label='Absorbance')
 ##np.savetxt('PLE unfilled.txt', f1, delimiter='   ')
@@ -696,6 +716,8 @@ ax2.yaxis.set_minor_locator(plt.MultipleLocator(15))
 #plt.rcParams["axes.linewidth"]  = 2.0
 
 ax2.set_aspect(50)
+
+#bg_profile(NormalizedPL2)
 
 
 savefig(spectrafile, dpi=150)
